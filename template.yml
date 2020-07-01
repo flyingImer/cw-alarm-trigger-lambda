@@ -1,0 +1,214 @@
+Resources:
+  SourceQueue6E809DF0:
+    Type: AWS::SQS::Queue
+    Metadata:
+      aws:cdk:path: CwAlarmTriggerLambdaStack/SourceQueue/Resource
+  EmptyQueueAlarmF4EC6516:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      ComparisonOperator: LessThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Metrics:
+        - Expression: notVisibleMetric + visibleMetric
+          Id: expr_1
+        - Id: notVisibleMetric
+          MetricStat:
+            Metric:
+              Dimensions:
+                - Name: QueueName
+                  Value:
+                    Fn::GetAtt:
+                      - SourceQueue6E809DF0
+                      - QueueName
+              MetricName: ApproximateNumberOfMessagesNotVisible
+              Namespace: AWS/SQS
+            Period: 60
+            Stat: Sum
+          ReturnData: false
+        - Id: visibleMetric
+          MetricStat:
+            Metric:
+              Dimensions:
+                - Name: QueueName
+                  Value:
+                    Fn::GetAtt:
+                      - SourceQueue6E809DF0
+                      - QueueName
+              MetricName: ApproximateNumberOfMessagesVisible
+              Namespace: AWS/SQS
+            Period: 60
+            Stat: Sum
+          ReturnData: false
+      Threshold: 0
+    Metadata:
+      aws:cdk:path: CwAlarmTriggerLambdaStack/EmptyQueueAlarm/Resource
+  SQSEmptyRule1F5D9C2B:
+    Type: AWS::Events::Rule
+    Properties:
+      EventPattern:
+        source:
+          - aws.cloudwatch
+        detail-type:
+          - CloudWatch Alarm State Change
+        resources:
+          - Fn::GetAtt:
+              - EmptyQueueAlarmF4EC6516
+              - Arn
+        detail:
+          state:
+            value:
+              - ALARM
+      State: ENABLED
+      Targets:
+        - Arn:
+            Fn::GetAtt:
+              - TestLambda2F70C45E
+              - Arn
+          Id: Target0
+    Metadata:
+      aws:cdk:path: CwAlarmTriggerLambdaStack/SQSEmptyRule/Resource
+  TestLambdaServiceRoleC28C2D9C:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    Metadata:
+      aws:cdk:path: CwAlarmTriggerLambdaStack/TestLambda/ServiceRole/Resource
+  TestLambda2F70C45E:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket:
+          Ref: AssetParameterse2c0a62dcf2257de0488ce5220852254b22d067bb20696d9f6c38700afad99d3S3Bucket1629F522
+        S3Key:
+          Fn::Join:
+            - ""
+            - - Fn::Select:
+                  - 0
+                  - Fn::Split:
+                      - "||"
+                      - Ref: AssetParameterse2c0a62dcf2257de0488ce5220852254b22d067bb20696d9f6c38700afad99d3S3VersionKeyF8934C10
+              - Fn::Select:
+                  - 1
+                  - Fn::Split:
+                      - "||"
+                      - Ref: AssetParameterse2c0a62dcf2257de0488ce5220852254b22d067bb20696d9f6c38700afad99d3S3VersionKeyF8934C10
+      Handler: index.handler
+      Role:
+        Fn::GetAtt:
+          - TestLambdaServiceRoleC28C2D9C
+          - Arn
+      Runtime: nodejs12.x
+    DependsOn:
+      - TestLambdaServiceRoleC28C2D9C
+    Metadata:
+      aws:cdk:path: CwAlarmTriggerLambdaStack/TestLambda/Resource
+      aws:asset:path: asset.e2c0a62dcf2257de0488ce5220852254b22d067bb20696d9f6c38700afad99d3
+      aws:asset:property: Code
+  TestLambdaAllowEventRuleCwAlarmTriggerLambdaStackSQSEmptyRule85326588298F2CCA:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+          - TestLambda2F70C45E
+          - Arn
+      Principal: events.amazonaws.com
+      SourceArn:
+        Fn::GetAtt:
+          - SQSEmptyRule1F5D9C2B
+          - Arn
+    Metadata:
+      aws:cdk:path: CwAlarmTriggerLambdaStack/TestLambda/AllowEventRuleCwAlarmTriggerLambdaStackSQSEmptyRule85326588
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Modules: aws-cdk=1.48.0,@aws-cdk/assets=1.48.0,@aws-cdk/aws-applicationautoscaling=1.48.0,@aws-cdk/aws-autoscaling=1.48.0,@aws-cdk/aws-autoscaling-common=1.48.0,@aws-cdk/aws-autoscaling-hooktargets=1.48.0,@aws-cdk/aws-cloudwatch=1.48.0,@aws-cdk/aws-ec2=1.48.0,@aws-cdk/aws-ecr=1.48.0,@aws-cdk/aws-ecr-assets=1.48.0,@aws-cdk/aws-ecs=1.48.0,@aws-cdk/aws-elasticloadbalancingv2=1.48.0,@aws-cdk/aws-events=1.48.0,@aws-cdk/aws-events-targets=1.48.0,@aws-cdk/aws-iam=1.48.0,@aws-cdk/aws-kms=1.48.0,@aws-cdk/aws-lambda=1.48.0,@aws-cdk/aws-logs=1.48.0,@aws-cdk/aws-s3=1.48.0,@aws-cdk/aws-s3-assets=1.48.0,@aws-cdk/aws-servicediscovery=1.48.0,@aws-cdk/aws-sns=1.48.0,@aws-cdk/aws-sns-subscriptions=1.48.0,@aws-cdk/aws-sqs=1.48.0,@aws-cdk/aws-ssm=1.48.0,@aws-cdk/cloud-assembly-schema=1.48.0,@aws-cdk/core=1.48.0,@aws-cdk/custom-resources=1.48.0,@aws-cdk/cx-api=1.48.0,@aws-cdk/region-info=1.48.0,jsii-runtime=node.js/v12.13.1
+    Condition: CDKMetadataAvailable
+Parameters:
+  AssetParameterse2c0a62dcf2257de0488ce5220852254b22d067bb20696d9f6c38700afad99d3S3Bucket1629F522:
+    Type: String
+    Description: S3 bucket for asset "e2c0a62dcf2257de0488ce5220852254b22d067bb20696d9f6c38700afad99d3"
+  AssetParameterse2c0a62dcf2257de0488ce5220852254b22d067bb20696d9f6c38700afad99d3S3VersionKeyF8934C10:
+    Type: String
+    Description: S3 key for asset version "e2c0a62dcf2257de0488ce5220852254b22d067bb20696d9f6c38700afad99d3"
+  AssetParameterse2c0a62dcf2257de0488ce5220852254b22d067bb20696d9f6c38700afad99d3ArtifactHashC7DD2D6B:
+    Type: String
+    Description: Artifact hash for asset "e2c0a62dcf2257de0488ce5220852254b22d067bb20696d9f6c38700afad99d3"
+Conditions:
+  CDKMetadataAvailable:
+    Fn::Or:
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ca-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - cn-north-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - cn-northwest-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-central-1
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-north-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-3
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - me-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - sa-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-east-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-west-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-west-2
+
