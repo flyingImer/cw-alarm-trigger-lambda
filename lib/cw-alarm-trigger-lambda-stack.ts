@@ -41,8 +41,10 @@ export class CwAlarmTriggerLambdaStack extends cdk.Stack {
         source: ['aws.cloudwatch'],
         detailType: ['CloudWatch Alarm State Change'],
         resources: [
-          emptyAlarm.alarmArn
-        ],
+          {
+            prefix: emptyAlarm.alarmArn
+          }
+        ] as any[],
         detail: {
           state: {
             value: ['ALARM']
